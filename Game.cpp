@@ -35,6 +35,13 @@ short int diff = 0, BirdTheme = 0, ChooseTheme = 0;
 bool ttp = 0, Reseting = 0, press = 0, th = 0;
 float Velocity, Gravity, PipeSpeedUpNDown = 0.75;
 
+// FOR DASH
+int scoreCounterForAbility = 0, dashGap = 1;
+int dashDo = 0;
+bool dashColl = false;
+Clock dashTimer2;
+
+
 Font MainFont;
 Font FontTheme;
 Font fontrate;
@@ -85,24 +92,24 @@ struct Pipes
 {
     Sprite PiUp[5];
     Sprite PiDown[5];
-    Texture Tex[2];
+    Texture Tex[6];
 
     int Rand;
     bool x, y, a, b;
 
     void Constructor()
     {
-        Tex[0].loadFromFile("pipeup2.png");
-        Tex[1].loadFromFile("pipedown2.png");
+        Tex[0].loadFromFile("GreenPipeUp.png");
+        Tex[1].loadFromFile("GreenPipeDown.png");
 
         for (int i = 0; i < 5; i++)
         {
             GenRan();
-            PiUp[i].setTexture(Tex[0]);
-            PiUp[i].setPosition(1700, Rand);
 
-            PiDown[i].setTexture(Tex[1]);
-            PiDown[i].setPosition(1700, (PiUp[i].getPosition().y - GAP * 5) + 15);
+                PiUp[i].setTexture(Tex[0]);
+                PiDown[i].setTexture(Tex[1]);
+            PiUp[i].setPosition(1700, Rand);
+            PiDown[i].setPosition(1700, (PiUp[i].getPosition().y - GAP * 5) + 20);
         }
         x = 0, y = 0, a = 0, b = 0;
     }
@@ -115,7 +122,7 @@ struct Pipes
     void MovePipes()
     {
         PiUp[0].move(SPEED, 0);
-        PiDown[0].move(SPEED, 0);   
+        PiDown[0].move(SPEED, 0);
 
         if (PiUp[0].getPosition().x <= DIS)
             x = 1;
@@ -131,7 +138,7 @@ struct Pipes
         {
             PiUp[2].move(SPEED, 0);
             PiDown[2].move(SPEED, 0);
-        }      
+        }
 
         if (PiUp[2].getPosition().x <= DIS)
             a = 1;
@@ -139,7 +146,7 @@ struct Pipes
         {
             PiUp[3].move(SPEED, 0);
             PiDown[3].move(SPEED, 0);
-        }     
+        }
 
         if (PiUp[3].getPosition().x <= DIS)
             b = 1;
@@ -155,10 +162,10 @@ struct Pipes
         for (int i = 0; i < 5; i++)
         {
             GenRan();
-            if (PiUp[i].getPosition().x <= -112)
+            if (PiUp[i].getPosition().x <= -135)
             {
                 PiUp[i].setPosition(1700, Rand);
-                PiDown[i].setPosition(1700, (PiUp[i].getPosition().y - GAP * 5) + 15);
+                PiDown[i].setPosition(1700, (PiUp[i].getPosition().y - GAP * 5) + 20);
             }
         }
     }
@@ -176,11 +183,25 @@ struct Pipes
 struct Ground
 {
     Sprite TwoGrounds;
-    Texture Grounds;
+    Texture Grounds [4];
     void Constructor(int PosX, int PosY)
     {
-        Grounds.loadFromFile("Land.PNG");
-        TwoGrounds.setTexture(Grounds);
+        Grounds[0].loadFromFile("ClassicLand.PNG");
+        Grounds[1].loadFromFile("ShanghaiLand.PNG");
+        Grounds[2].loadFromFile("TokyoLand.PNG");
+        Grounds[3].loadFromFile("LondonLand.PNG");
+
+        if (ChooseTheme == 0)
+        TwoGrounds.setTexture(Grounds[0]);
+
+        else if (ChooseTheme == 1)
+            TwoGrounds.setTexture(Grounds[1]);
+
+        else if (ChooseTheme == 2)
+            TwoGrounds.setTexture(Grounds[2]);
+
+        else if (ChooseTheme == 3)
+            TwoGrounds.setTexture(Grounds[3]);
         TwoGrounds.setPosition(PosX, PosY);
         TwoGrounds.setScale(2.18, 1);
     }
@@ -446,6 +467,8 @@ struct Scoring
             ScoreSound.play();
             Sinc++;
             Score.setString(to_string(Sinc));
+            scoreCounterForAbility++;
+            
         }
 
     }
@@ -525,8 +548,8 @@ struct GameOverMenu
     {
         gameOver[0].loadFromFile("gameover.png");
         gameOver[1].loadFromFile("score.png");
-        gameOver[2].loadFromFile("Play.png");
-        gameOver[3].loadFromFile("Themes.png");
+        gameOver[2].loadFromFile("btn-play.png");
+        gameOver[3].loadFromFile("Theme.png");
 
         medalTx[0].loadFromFile("Silver-Medal.png");
         medalTx[1].loadFromFile("Bronze-Medal.png");
@@ -698,7 +721,7 @@ struct Menu
         BirdForButton.setPosition(1150, 570);
 
         darkWindow.setSize(Vector2f(SCREEN_W, SCREEN_H));
-        darkWindow.setFillColor(Color(0, 0, 0, 200));
+        darkWindow.setFillColor(Color(0, 0, 0, 210));
 
         MainMenuT[0].loadFromFile("btn-play.png");
         MainMenuT[1].loadFromFile("Theme.png");
@@ -791,20 +814,24 @@ struct Themes
     void Constructor()
     {
         Textures[0].loadFromFile("Classic.png");
-        Textures[1].loadFromFile("Shanghai.png");
+        Textures[1].loadFromFile("Shanghai.jpg");
         Textures[2].loadFromFile("Tokyo.png");
-        Textures[3].loadFromFile("London.png");
+        Textures[3].loadFromFile("London.jpg");
 
         themes.setTexture(Textures[0]);
-        themes.setScale(2.85, 1.5);
-        themes.setPosition(0, -100);
+
+        if (ChooseTheme != 0)
+            themes.setPosition(0, -50);
+
+        else 
+            themes.setPosition(0, 0);
     }
 
     void ChoosingThemeGUI()
     {
-        if (currentGameState == GameState::eThemes )
+        if (currentGameState == GameState::eThemes)
         {
-            if (Mouse::isButtonPressed(Mouse::Left) && Mouse::getPosition(window).x > 840 && Mouse::getPosition(window).x < 1258 && Mouse::getPosition(window).y > 41 && Mouse::getPosition(window).y < 362 && !press)
+            if (Mouse::isButtonPressed(Mouse::Left) && Mouse::getPosition(window).x > 840  && Mouse::getPosition(window).x < 1265 && Mouse::getPosition(window).y > 40 && Mouse::getPosition(window).y < 362 && !press)
             {
                 ChooseTheme = 3;
                 press = true;
@@ -814,7 +841,7 @@ struct Themes
                     currentGameState = GameState::MainMenu;
             }
 
-            if (Mouse::isButtonPressed(Mouse::Left) && Mouse::getPosition(window).x > 840 && Mouse::getPosition(window).x < 1258 && Mouse::getPosition(window).y > 365 && Mouse::getPosition(window).y < 725 && !press)
+            if (Mouse::isButtonPressed(Mouse::Left) && Mouse::getPosition(window).x > 840 && Mouse::getPosition(window).x < 1265 && Mouse::getPosition(window).y > 365 && Mouse::getPosition(window).y < 688 && !press)
             {
                 ChooseTheme = 2;
 
@@ -825,7 +852,7 @@ struct Themes
                     currentGameState = GameState::MainMenu;
             }
 
-            if (Mouse::isButtonPressed(Mouse::Left) && Mouse::getPosition(window).x > 438 && Mouse::getPosition(window).x < 827 && Mouse::getPosition(window).y > 41 && Mouse::getPosition(window).y < 362 && !press)
+            if (Mouse::isButtonPressed(Mouse::Left) && Mouse::getPosition(window).x > 438 && Mouse::getPosition(window).x < 838 && Mouse::getPosition(window).y > 41 && Mouse::getPosition(window).y < 362 && !press)
             {
                 ChooseTheme = 0;
                 press = true;
@@ -835,7 +862,7 @@ struct Themes
                     currentGameState = GameState::MainMenu;
             }
 
-            if (Mouse::isButtonPressed(Mouse::Left) && Mouse::getPosition(window).x > 438 && Mouse::getPosition(window).x < 827 && Mouse::getPosition(window).y > 363 && Mouse::getPosition(window).y < 723 && !press)
+            if (Mouse::isButtonPressed(Mouse::Left) && Mouse::getPosition(window).x > 438 && Mouse::getPosition(window).x < 838 && Mouse::getPosition(window).y > 365 && Mouse::getPosition(window).y < 688 && !press)
             {
                 ChooseTheme = 1;
                 press = true;
@@ -876,27 +903,27 @@ struct Themes
         theme1.loadFromFile("Classic.png");
         SpriteTheme1.setTexture(theme1);
         SpriteTheme1.setPosition(Vector2f(440, 40));
-        SpriteTheme1.setScale(0.7, 0.6f);
+        SpriteTheme1.setScale(0.25, 0.41);
 
-        theme2.loadFromFile("London.png");
+        theme2.loadFromFile("London.jpg");
         SpriteTheme2.setTexture(theme2);
         SpriteTheme2.setPosition(Vector2f(840, 40));
-        SpriteTheme2.setScale(0.7, 0.6f);
+        SpriteTheme2.setScale(0.25, 0.41);
 
-        theme3.loadFromFile("Shanghai.png");
+        theme3.loadFromFile("Shanghai.jpg");
         SpriteTheme3.setTexture(theme3);
         SpriteTheme3.setPosition(Vector2f(440, 365));
-        SpriteTheme3.setScale(0.7, 0.6f);
+        SpriteTheme3.setScale(0.25, 0.41);
 
         theme4.loadFromFile("Tokyo.png");
         SpriteTheme4.setTexture(theme4);
         SpriteTheme4.setPosition(Vector2f(840, 365));
-        SpriteTheme4.setScale(0.7, 0.6);
+        SpriteTheme4.setScale(0.25, 0.41);
 
-        titleBar.setSize(Vector2f(822, 40));
+        titleBar.setSize(Vector2f(828, 40));
         titleBar.setFillColor(Color::Black);
         titleBar.setOrigin(titleBar.getGlobalBounds().width / 2, titleBar.getOrigin().y);
-        titleBar.setPosition(window.getSize().x / 2, 0);
+        titleBar.setPosition(window.getSize().x / 2 + 2, 0);
 
         titleText.setFillColor(Color::White);
         titleText.setPosition(800, 10); // Adjusted for vertical centering
@@ -1252,6 +1279,88 @@ struct BirdThemes
     }
 }Birds;
 
+struct dashStruct
+{
+
+    bool resetDash = false, dashSound = false;
+    int coins = 0;
+    Clock dashTimer;
+    Sound dashWOOH; SoundBuffer dbf; Sound dashWEE; SoundBuffer dbb;
+    Text coinText;
+    Sprite InvisPipe; Texture tx;
+    bool hasIncreased1 = false;
+    bool hasIncreased2 = false;
+    bool hasIncreased3 = false;
+    bool hasIncreased4 = false;
+    bool hasIncreased5 = false;
+    bool canUse = false;
+    bool coinIncreased = false;
+
+    void set() {
+        dbf.loadFromFile("swoosh-101soundboards.wav");
+        dbb.loadFromFile("birdwee.wav");
+        dashWOOH.setBuffer(dbf);
+        dashWEE.setBuffer(dbb);
+
+        tx.loadFromFile("GreenPipeUp.png");
+        InvisPipe.setTexture(tx);
+        InvisPipe.setScale(0.2, 0.9);
+        InvisPipe.setPosition(280, 450);
+        coinText.setFont(Score.ScoreFont);
+        coinText.setScale(1.4, 1.4);
+        coinText.setPosition(5, 0);
+        coinText.setFillColor(Color::Cyan);
+        coinText.setString("Coins: ");
+    }
+    void dashSpeed();
+    void Scoring();
+    void coinUpdate()
+    {
+        if (scoreCounterForAbility % (dashGap * 10) != 0)
+            coinIncreased = false;
+        if (Score.Sinc > 0 && scoreCounterForAbility % (dashGap * 10) == 0 && !coinIncreased)
+        {
+            coins++;
+            coinIncreased = true;
+            dashGap++;
+            scoreCounterForAbility = 0;
+        }
+        coinText.setString("Dash: " + to_string(coins));
+
+    }
+    void coinUse()
+    {
+
+        coins--;
+        if (coins <= 0)
+            coins = 0;
+    }
+    void useIt() {
+        if (coins > 0)
+            canUse = true;
+        if (coins <= 0)
+            canUse = false;
+    }
+    
+    void pressed()
+    {
+        if (event.type == event.KeyPressed)
+        {
+            if (event.key.code == Keyboard::X && dash.canUse)
+            {
+                dashDo = 1;
+                coinUse();
+            }
+        }
+    }
+    void draw() {
+        if (currentGameState == GameState::eGame)
+            window.draw(dash.coinText);
+    }
+
+
+}dash;
+
 struct ForModeControl
 {
     void ControlSwitching()
@@ -1259,7 +1368,7 @@ struct ForModeControl
         if (currentGameState == GameState::eTTP && Keyboard::isKeyPressed(Keyboard::Space))
             currentGameState = GameState::eGame;
 
-        
+
         if (currentGameState != GameState::MainMenu && currentGameState != GameState::eTTP)
             Reseting = 0;
     }
@@ -1284,7 +1393,9 @@ struct ForModeControl
             Score.Constructor(800, 100, 50);
 
             Flash.Constructor();
-
+            scoreCounterForAbility = 0;
+            dash.coins = 0;
+            dashGap = 1;
             Reseting = 1;
         }
     }
@@ -1306,9 +1417,12 @@ struct Gamemodes
     }
     void Playing()
     {
-        Collide.CollisionWGround();
-        Collide.CollisionWPipes(Pipes.PiUp);
-        Collide.CollisionWPipes(Pipes.PiDown);
+        if(dashDo == 0 && !dashColl)
+        {
+            Collide.CollisionWGround();
+            Collide.CollisionWPipes(Pipes.PiUp);
+            Collide.CollisionWPipes(Pipes.PiDown);
+        }
 
         Bird.GUI();
 
@@ -1317,6 +1431,11 @@ struct Gamemodes
         Pipes.ResetPipesPosition();
 
         Score.IncScore();
+
+        if (dashDo == 1)
+            dash.Scoring();
+        dash.useIt();
+        dash.coinUpdate();
 
         Bird.Draw();
 
@@ -1372,7 +1491,8 @@ int main()
         {
             if (event.type == Event::Closed)
                 window.close();
-                transition();
+            transition();
+            dash.pressed();
 
             if (currentGameState == GameState::eGame || currentGameState == GameState::eTTP)
                 Bird.GUI();
@@ -1380,8 +1500,12 @@ int main()
         if (currentGameState == GameState::eGame)
             Difficulty.DifficultySettings();
 
+       // cout << Mouse::getPosition(window).x << "  " << Mouse::getPosition(window).y << endl;
+
+
         Control.ControlSwitching();
         Control.Reset();
+        dash.dashSpeed();
         Score.hsSetup();
         draw();
     }
@@ -1395,7 +1519,7 @@ void setAssets()
     level.set();
     Themes.set();
     setFonts();
-
+    dash.set();
     credits.set();
 }
 
@@ -1437,6 +1561,7 @@ void draw()
         break;
     }
     AnimateCredits();
+    dash.draw();
     window.display();
 }
 
@@ -1556,4 +1681,100 @@ void AnimateCredits() // for credits
 
     else
         credits.ResetCredits();
+}
+void dashStruct::dashSpeed()
+{
+
+    if (currentGameState == GameState::eGame)
+    {
+
+        if (!dashColl)
+            dashTimer2.restart();
+        if (dashTimer2.getElapsedTime().asSeconds() > 0.6)
+            dashColl = false;
+        if (dashDo == 1 && !dash.resetDash)
+        {
+            dash.dashTimer.restart();
+            dash.resetDash = true;
+        }
+
+        if (dashDo == 1 && dash.resetDash)
+        {
+            if (!dash.dashSound)
+            {
+                dash.dashSound = true;
+                dashWOOH.play();
+                dashWEE.play();
+            }
+
+
+            Pipes.PiDown[0].move(-50, 0);
+            Pipes.PiUp[0].move(-50, 0);
+            Pipes.PiDown[1].move(-50, 0);
+            Pipes.PiUp[1].move(-50, 0);
+            Pipes.PiDown[2].move(-50, 0);
+            Pipes.PiUp[2].move(-50, 0);
+            Pipes.PiDown[3].move(-50, 0);
+            Pipes.PiUp[3].move(-50, 0);
+            Pipes.PiDown[4].move(-50, 0);
+            Pipes.PiUp[4].move(-50, 0);
+            if (dash.dashTimer.getElapsedTime().asSeconds() > 0.3)
+            {
+                dashDo = 0;
+                dash.resetDash = false;
+                dash.dashSound = false;
+                dashColl = true;
+            }
+
+
+        }
+    }
+
+}
+void dashStruct::Scoring()
+{
+    if (currentGameState == GameState::eGame)
+    {
+
+        if (InvisPipe.getGlobalBounds().intersects(Pipes.PiUp[0].getGlobalBounds()) && !hasIncreased1)
+        {
+            Score.Sinc++;
+            hasIncreased1 = true;
+        }
+        if (!InvisPipe.getGlobalBounds().intersects(Pipes.PiUp[0].getGlobalBounds()))
+            hasIncreased1 = false;
+
+        if (InvisPipe.getGlobalBounds().intersects(Pipes.PiUp[1].getGlobalBounds()) && !hasIncreased2)
+        {
+            Score.Sinc++;
+            hasIncreased2 = true;
+        }
+        if (!InvisPipe.getGlobalBounds().intersects(Pipes.PiUp[1].getGlobalBounds()))
+            hasIncreased2 = false;
+
+        if (InvisPipe.getGlobalBounds().intersects(Pipes.PiUp[2].getGlobalBounds()) && !hasIncreased3)
+        {
+            Score.Sinc++;
+            hasIncreased3 = true;
+        }
+        if (!InvisPipe.getGlobalBounds().intersects(Pipes.PiUp[2].getGlobalBounds()))
+            hasIncreased3 = false;
+
+        if (InvisPipe.getGlobalBounds().intersects(Pipes.PiUp[3].getGlobalBounds()) && !hasIncreased4)
+        {
+            Score.Sinc++;
+            hasIncreased4 = true;
+        }
+        if (!InvisPipe.getGlobalBounds().intersects(Pipes.PiUp[3].getGlobalBounds()))
+            hasIncreased4 = false;
+
+        if (InvisPipe.getGlobalBounds().intersects(Pipes.PiUp[4].getGlobalBounds()) && !hasIncreased5)
+        {
+            Score.Sinc++;
+            hasIncreased5 = true;
+        }
+        if (!InvisPipe.getGlobalBounds().intersects(Pipes.PiUp[4].getGlobalBounds()))
+            hasIncreased5 = false;
+
+    }
 }
